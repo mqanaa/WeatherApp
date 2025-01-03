@@ -1,0 +1,61 @@
+
+.location-label {
+    -fx-font-size: 18px;
+    -fx-font-weight: bold;
+}
+
+.main-temp {
+    -fx-font-size: 40px;
+    -fx-font-weight: bold;
+}
+
+.current-weather {
+    -fx-font-size: 14px;
+    -fx-spacing: 5px;
+    -fx-alignment: center;
+}
+
+.daily-forecast {
+    -fx-font-size: 14px;
+    -fx-spacing: 10px;
+    -fx-alignment: center;
+}
+
+.hourly-forecast {
+    -fx-font-size: 14px;
+    -fx-padding: 5px;
+    -fx-spacing: 5px;
+}
+
+.title-bar {
+    -fx-background-color: #DBDBDB;
+    -fx-padding: 0 10 0 10;
+}
+
+.favorite {
+    -fx-padding: 5px;
+    -fx-font-size: 14px;
+}
+
+.subtitle {
+    -fx-font-size: 20px;
+}
+
+.selected {
+    -fx-background-color: #E6E6E6;
+}
+
+.odd-row {
+    -fx-background-color: #E6E6E6;
+}
+
+.centered-spaced {
+    -fx-spacing: 10px;
+    -fx-alignment: center;
+}
+
+.search-layout {
+    -fx-alignment: center;
+    -fx-spacing: 10px;
+    -fx-padding: 10px;
+}

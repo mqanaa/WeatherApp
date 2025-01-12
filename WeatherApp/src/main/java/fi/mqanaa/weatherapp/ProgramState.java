@@ -52,7 +52,7 @@ public class ProgramState {
      * @throws Exception if an error occurs while loading weather data.
      */
     public void loadWeatherData() throws Exception {
-        API api = new API();
+        WeatherAPI api = new WeatherAPI();
         
         String jsonHourlyData;
         String jsonDailyData;
@@ -170,8 +170,8 @@ public class ProgramState {
      *
      * @param city the city to add to favorites.
      * @return true if the city was added successfully
-     * @throws Exception if inputted location can't be found in the API, 
-     * if the favorite slots are full, or if location is already in favorites
+     * @throws Exception if inputted location can't be found in the WeatherAPI, 
+ if the favorite slots are full, or if location is already in favorites
      */    
     public boolean addFavorite(String city) throws Exception {
         
@@ -180,11 +180,11 @@ public class ProgramState {
             throw new Exception ("Favorite slots full");
         }
         
-        API api = new API();
+        WeatherAPI api = new WeatherAPI();
         
         String currentLocationFromApi;
         try {
-            // Checks if the API can find the city
+            // Checks if the WeatherAPI can find the city
             api.getCurrentWeather(city, currentTempUnit);
             currentLocationFromApi = api.getCurrentLocationName();
         } catch (Exception e) {

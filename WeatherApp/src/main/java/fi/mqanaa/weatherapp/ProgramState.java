@@ -3,80 +3,85 @@ package fi.mqanaa.weatherapp;
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
-import java.util.ArrayList;
-import java.util.LinkedList;
-import java.util.Map;
-import java.util.TreeMap;
-import java.util.TreeSet;
 import com.google.gson.JsonSyntaxException;
 
+import java.util.*;
+
 /**
- * This class keeps track of the program state, including weather data, current location
- * and the units currently in use. It also implements favorites and search history, 
- * which can be read from a file and written to a file.
+ * Manages the program state, including weather data, location, units, favorites,
+ * and search history. Supports loading and saving state to a file.
  */
 public class ProgramState {
  
-    final private TreeSet<String> favorites;
-    final private LinkedList<String> history;
-    final private int maxHistorySize = 25;
-    final private int maxFavoritesSize = 5;
-    final private String NO_HISTORY = "No search history";
+    
+    private static final String PROGRAM_STATE_FILE = "programState.json";
+    private static final String NO_HISTORY = "No search history";
+    private static final int MAX_HISTORY_SIZE = 25;
+    private static final int MAX_FAVORITES_SIZE = 5;
+
+    private final TreeSet<String> favorites;
+    private final LinkedList<String> history;
+    private final JsonFileHandler fileHandler;
+    private final WeatherAPI weatherAPI;
+
     private String currentLocation;
     private HourlyWeatherDataEntry currentWeather;
-    private ArrayList<HourlyWeatherDataEntry> hourlyWeathers;
-    private ArrayList<DailyWeatherDataEntry> dailyWeathers;
+    private List<HourlyWeatherDataEntry> hourlyWeathers;
+    private List<DailyWeatherDataEntry> dailyWeathers;
     private String units;
     private String currentTempUnit;
     private String currentWsUnit;
-    private JsonFileHandler fileHandler = new JsonFileHandler();
     
     /**
-     * Constructor to initialize ProgramState.
+     * Initializes a new ProgramState instance with default values.
+     *
+     * @param fileHandler the file handler for reading and writing JSON data
+     * @param weatherAPI the API interface for fetching weather data
      */
-    public ProgramState() {
+    public ProgramState(JsonFileHandler fileHandler, WeatherAPI weatherAPI) {
         this.favorites = new TreeSet<>();
         this.history = new LinkedList<>();
+        this.fileHandler = fileHandler;
+        this.weatherAPI = weatherAPI;
         this.currentLocation = "";
         this.hourlyWeathers = new ArrayList<>();
         this.dailyWeathers = new ArrayList<>();
         this.units = "metric";
         this.currentTempUnit = "C";
         this.currentWsUnit = "m/s";
-        this.fileHandler = new JsonFileHandler();
     }
  
-     /**
-     * Loads weather data and saves them as weather data objects
+    /**
+     * Loads weather data from the API.
      *
-     * @throws Exception if an error occurs while loading weather data.
+     * @throws Exception if weather data cannot be loaded
      */
     public void loadWeatherData() throws Exception {
-        WeatherAPI api = new WeatherAPI();
-        
-        String jsonHourlyData;
-        String jsonDailyData;
-        String jsonCurrentData;
         try {
-            jsonHourlyData = api.getForecast(currentLocation, currentTempUnit);
-            jsonDailyData = api.getDailyData(currentLocation, currentTempUnit);
-            jsonCurrentData = api.getCurrentWeather(currentLocation, currentTempUnit);
-            String currentLocationFromApi = api.getCurrentLocationName();
-            setCurrentLocation(currentLocationFromApi);
-            addToSearchHistory(currentLocationFromApi);
-            
-            JsonToWeatherDataEntries jtwde = new JsonToWeatherDataEntries();
-            hourlyWeathers = jtwde.createHourlyWeatherDataObjects(jsonHourlyData);
-            dailyWeathers = jtwde.createDailyWeatherDataObjects(jsonDailyData);
-            currentWeather = jtwde.createCurrentWeatherDataObject(jsonCurrentData); 
-            
+            fetchWeatherDataFromAPI();
+            addToSearchHistory(currentLocation);
         } catch (Exception e) {
-            throw e;
+            throw new Exception("Failed to load weather data", e);
         }
-               
-        
     }
+    
+    /**
+     * Fetches weather data from the API and updates the program state.
+     *
+     * @throws Exception if an error occurs while fetching data
+     */
+    private void fetchWeatherDataFromAPI() throws Exception {
+        JsonToWeatherDataEntries jtwde = new JsonToWeatherDataEntries();
 
+        String jsonHourlyData = weatherAPI.getForecast(currentLocation, currentTempUnit);
+        String jsonDailyData = weatherAPI.getDailyData(currentLocation, currentTempUnit);
+        String jsonCurrentData = weatherAPI.getCurrentWeather(currentLocation, currentTempUnit);
+
+        currentLocation = weatherAPI.getCurrentLocationName();
+        hourlyWeathers = jtwde.createHourlyWeatherDataObjects(jsonHourlyData);
+        dailyWeathers = jtwde.createDailyWeatherDataObjects(jsonDailyData);
+        currentWeather = jtwde.createCurrentWeatherDataObject(jsonCurrentData);
+    }
  
     /**
      * Returns the current location.
@@ -123,20 +128,29 @@ public class ProgramState {
         return currentWsUnit;
     }
 
-     /**
-     * Changes the units between metric and imperial.
+    /**
+     * Toggles the unit system between metric and imperial.
      */
     public void changeUnits() {
         if (units.equals("metric")) {
-            units = "imperial";
-            currentTempUnit = "F";
-            currentWsUnit = "mph";
+            setUnits("imperial", "F", "mph");
         } else {
-            units = "metric";
-            currentTempUnit = "C";
-            currentWsUnit = "m/s";
+            setUnits("metric", "C", "m/s");
         }
     }
+    
+    /**
+     * Updates the unit system and related unit values.
+     *
+     * @param units the unit system
+     * @param tempUnit the temperature unit
+     * @param wsUnit the wind speed unit
+     */
+    private void setUnits(String units, String tempUnit, String wsUnit) {
+        this.units = units;
+        this.currentTempUnit = tempUnit;
+        this.currentWsUnit = wsUnit;
+    }    
     
      /**
      * Returns the current weather data entry.
@@ -152,7 +166,7 @@ public class ProgramState {
      *
      * @return the list of daily weather data entries.
      */    
-    public ArrayList<DailyWeatherDataEntry> getDailyWeathers() {
+    public List<DailyWeatherDataEntry> getDailyWeathers() {
         return dailyWeathers;
     }
 
@@ -161,91 +175,74 @@ public class ProgramState {
      *
      * @return the list of hourly weather data entries.
      */    
-    public ArrayList<HourlyWeatherDataEntry> getHourlyWeathers() {
+    public List<HourlyWeatherDataEntry> getHourlyWeathers() {
         return hourlyWeathers;
     }
 
     /**
-     * Adds a city to favorites.
+     * Adds a city to the favorites list.
      *
-     * @param city the city to add to favorites.
+     * @param city the city to add to favorites
      * @return true if the city was added successfully
-     * @throws Exception if inputted location can't be found in the WeatherAPI, 
- if the favorite slots are full, or if location is already in favorites
-     */    
+     * @throws Exception if the city cannot be added
+     */
     public boolean addFavorite(String city) throws Exception {
-        
-        // Check if favorite slots are full
-        if (favorites.size() >= maxFavoritesSize) {
-            throw new Exception ("Favorite slots full");
+        if (favorites.size() >= MAX_FAVORITES_SIZE) {
+            throw new Exception("Favorite slots full");
         }
-        
-        WeatherAPI api = new WeatherAPI();
-        
-        String currentLocationFromApi;
+
         try {
-            // Checks if the WeatherAPI can find the city
-            api.getCurrentWeather(city, currentTempUnit);
-            currentLocationFromApi = api.getCurrentLocationName();
+            weatherAPI.getCurrentWeather(city, currentTempUnit);
+            String currentLocationFromApi = weatherAPI.getCurrentLocationName();
+            if (!favorites.add(currentLocationFromApi)) {
+                throw new Exception("Location already in favorites");
+            }
+            return true;
         } catch (Exception e) {
-            throw new Exception ("Location not found");
+            throw new Exception("Location not found", e);
         }
-        
-        //checking for duplicate entries
-        if (favorites.add(currentLocationFromApi)) {
-                return true;
-            } else {
-                throw new Exception ("Location already in favorites");
-        }
-        
-        
     }
  
     /**
-     * Removes a city from favorites.
+     * Removes a city from the favorites list.
      *
-     * @param city the city to remove from favorites.
-     * @return true if the city was removed successfully, false otherwise.
+     * @param city the city to remove.
+     * @return true if the city was removed successfully.
      */    
     public boolean removeFavorite(String city) {
-        boolean removedSuccesfully = favorites.remove(city);
-        return removedSuccesfully;
+        return favorites.remove(city);
     }
 
     /**
-     * Adds a city to search history. Keeps the number of locations in history
-     * capped to maxHistorySize.
+     * Adds a city to the search history.
      *
-     * @param city the city to add to search history.
-     */    
-    public void addToSearchHistory(String city) { 
-        // If the city is already in the history, move it to the beginning of the list
-        for (int i = 0; i < history.size(); i++) {
-            if (history.get(i).equals(city)) {
-                String cityToMove = history.remove(i);
-                history.addFirst(cityToMove);
-                return;
-            }
-        }
-        
-        // Otherwise add the city to history
+     * @param city the city to add
+     */
+    public void addToSearchHistory(String city) {
+        addCityToHistory(city);
+    }
+    
+    /**
+     * Helper method to add a city to the search history.
+     * Removes duplicates and caps history size.
+     *
+     * @param city the city to add
+     */
+    private void addCityToHistory(String city) {
+        history.remove(city);
         history.addFirst(city);
-        
-        if (history.size() > maxHistorySize) {
+        if (history.size() > MAX_HISTORY_SIZE) {
             history.removeLast();
         }
     }
 
     /**
-     * Returns the latest city in the search history.
+     * Returns the most recent city from the search history.
      *
-     * @return the latest city in the search history.
-     */    
+     * @return the latest city, or a default message if history is empty
+     */
     public String getLatestCity() {
-        if (history.isEmpty()) {
-            return NO_HISTORY;
-        }
-        return history.getFirst();
+        return history.isEmpty() ? NO_HISTORY : history.getFirst();
     }
 
     /**
@@ -268,32 +265,51 @@ public class ProgramState {
 
     /**
      * Loads the program state from a JSON file.
-     * @throws Exception if the file cannot be found or isn't properly formatted
+     * @throws Exception if the file cannot be read or parsed.
      */    
     public void loadProgramState() throws Exception {
-        // Extract data from the jsonState and create WeatherDataEntries
         Gson gson = new Gson();
 
         try {
-            
-            String jsonData = fileHandler.readJsonFromFile("programState.json");
+            String jsonData = fileHandler.readJsonFromFile(PROGRAM_STATE_FILE);
             JsonObject programStateData = gson.fromJson(jsonData, JsonObject.class);
 
-            JsonArray favoriteEntries = programStateData.getAsJsonArray("favorites");
+            loadFavoritesFromJson(programStateData);
+            loadHistoryFromJson(programStateData);
+
+            if (!history.isEmpty()) {
+                currentLocation = history.getFirst();
+            }
+        } catch (NullPointerException | JsonSyntaxException e) {
+            throw new Exception("Error reading programState.json", e);
+        }
+    }
+    
+    /**
+     * Loads the favorites list from the program state JSON.
+     *
+     * @param programStateData the JSON object containing program state data
+     */
+    private void loadFavoritesFromJson(JsonObject programStateData) {
+        JsonArray favoriteEntries = programStateData.getAsJsonArray("favorites");
+        if (favoriteEntries != null) {
             for (var city : favoriteEntries) {
                 favorites.add(city.getAsString());
             }
+        }
+    }
 
-            JsonArray historyEntries = programStateData.getAsJsonArray("history");
+    /**
+     * Loads the search history from the program state JSON.
+     *
+     * @param programStateData the JSON object containing program state data
+     */
+    private void loadHistoryFromJson(JsonObject programStateData) {
+        JsonArray historyEntries = programStateData.getAsJsonArray("history");
+        if (historyEntries != null) {
             for (var city : historyEntries) {
                 history.add(city.getAsString());
             }
-            if (!history.isEmpty()) {
-                currentLocation = history.getFirst(); 
-            }
-        } catch (NullPointerException | JsonSyntaxException e) {
-
-            throw new Exception("Error reading programState.json");
         }
     }
 
@@ -304,14 +320,13 @@ public class ProgramState {
         Map<String, Object> programStateData = new TreeMap<>();
         programStateData.put("favorites", favorites);
         programStateData.put("history", history);
-        Gson gson = new Gson();
-        String jsonState = gson.toJson(programStateData);
-        System.out.println(jsonState);
+
+        String jsonState = new Gson().toJson(programStateData);
 
         try {
-            fileHandler.writeJsonToFile("programState.json", jsonState);
+            fileHandler.writeJsonToFile(PROGRAM_STATE_FILE, jsonState);
         } catch (Exception e) {
-            System.err.println("Error when trying to write file programstate.json: " + e.getMessage());
+            System.err.println("Error when trying to write file " + PROGRAM_STATE_FILE + e.getMessage());
         }
         
     }

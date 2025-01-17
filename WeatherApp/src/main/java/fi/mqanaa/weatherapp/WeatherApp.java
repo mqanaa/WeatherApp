@@ -1,5 +1,6 @@
 package fi.mqanaa.weatherapp;
 
+import java.util.ArrayList;
 import javafx.application.Application;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
@@ -8,7 +9,7 @@ import javafx.scene.control.Label;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
-import java.util.ArrayList;
+import java.util.List;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Map;
@@ -38,7 +39,7 @@ public class WeatherApp extends Application {
     private ScrollPane hourlyForecastBox;
     private GridPane favoritesPane;
     private final Text infoText = new Text("");
-    private final ArrayList<VBox> dailyWeatherBoxes = new ArrayList<>();
+    private final List<VBox> dailyWeatherBoxes = new ArrayList<>();
     private static ProgramState state;
     
     // Mapping of weather IDs to icons
@@ -331,7 +332,9 @@ public class WeatherApp extends Application {
         this.stage = stage;
         stage.setTitle("WeatherApp");
         
-        state = new ProgramState();
+        WeatherAPI weatherAPI = new WeatherAPI();
+        JsonFileHandler fileHandler = new JsonFileHandler();
+        state = new ProgramState(fileHandler, weatherAPI);
         try {
             state.loadProgramState();
         } catch (Exception e) {
@@ -510,7 +513,7 @@ public class WeatherApp extends Application {
      * @return The HBox containing daily weather forecasts.
      */
     private HBox getDailyForecastsBox() {
-        ArrayList<DailyWeatherDataEntry> dailyWeathers = state.getDailyWeathers();
+        List<DailyWeatherDataEntry> dailyWeathers = state.getDailyWeathers();
         HBox forecastBox = new HBox();
         forecastBox.getStyleClass().add("daily-forecast");
         
@@ -552,7 +555,7 @@ public class WeatherApp extends Application {
      * @return The ScrollPane containing hourly weather forecasts.
      */
     private ScrollPane getHourlyForecastBox(String date) {
-        ArrayList<HourlyWeatherDataEntry> hourlyWeathers = state.getHourlyWeathers();
+        List<HourlyWeatherDataEntry> hourlyWeathers = state.getHourlyWeathers();
         String currentTempUnit = state.getTempUnits();
         String currentWsUnit = state.getWsUnits();
         

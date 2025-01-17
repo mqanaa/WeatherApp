@@ -29,7 +29,7 @@ public class ProgramState {
     private String units;
     private String currentTempUnit;
     private String currentWsUnit;
-    private JsonFileReaderWriter jfrw = new JsonFileReaderWriter();
+    private JsonFileHandler fileHandler = new JsonFileHandler();
     
     /**
      * Constructor to initialize ProgramState.
@@ -43,7 +43,7 @@ public class ProgramState {
         this.units = "metric";
         this.currentTempUnit = "C";
         this.currentWsUnit = "m/s";
-        this.jfrw = new JsonFileReaderWriter();
+        this.fileHandler = new JsonFileHandler();
     }
  
      /**
@@ -276,7 +276,7 @@ public class ProgramState {
 
         try {
             
-            String jsonData = jfrw.readFromFile("programState.json");
+            String jsonData = fileHandler.readJsonFromFile("programState.json");
             JsonObject programStateData = gson.fromJson(jsonData, JsonObject.class);
 
             JsonArray favoriteEntries = programStateData.getAsJsonArray("favorites");
@@ -307,9 +307,9 @@ public class ProgramState {
         Gson gson = new Gson();
         String json = gson.toJson(programStateData);
         System.out.println(json);
-        JsonFileReaderWriter JFRW = new JsonFileReaderWriter();
+
         try {
-            JFRW.writeToFile("programState.json", json);
+            fileHandler.writeJsonToFile("programState.json", json);
         } catch (Exception e) {
             System.err.println("Error when trying to write file programstate.json: " + e.getMessage());
         }

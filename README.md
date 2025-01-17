@@ -33,9 +33,9 @@ This project is a weather application built with Java and JavaFX for the graphic
 
 ## API key details
 Your API key needs to have access to the following OpenWeatherMap APIs for the app to work properly:
-- [Current Weather data] (https://openweathermap.org/current)
-- [Hourly Forecast 4 days] (https://openweathermap.org/api/hourly-forecast)
-- [Daily Forecast 16 days] (https://openweathermap.org/forecast16)
+- [Current Weather data](https://openweathermap.org/current)
+- [Hourly Forecast 4 days](https://openweathermap.org/api/hourly-forecast)
+- [Daily Forecast 16 days](https://openweathermap.org/forecast16)
 
 
 ### Dependencies
@@ -69,6 +69,7 @@ If using Maven, add:
 - `ProgramState.java`: Manages application state (favorites, history, current location, etc.).
 - `JsonFileHandler.java`: Handles reading and writing JSON files.
 - `WeatherAPI.java`: Interface for interacting with a weather API.
+- `JsonToWeatherDataEntries`: converts the data fetched from the API to WeatherData objects.
 - `HourlyWeatherDataEntry.java` and `DailyWeatherDataEntry.java`: Represent weather data objects.
 - `WeatherApp`: Provides an interactive user interface.
 

@@ -20,7 +20,7 @@ public class WeatherAPI {
 
     /**
      * Loads the API key from the configuration file.
-     * 
+     *
      * @return the API key as a string.
      * @throws RuntimeException if the key is missing or cannot be loaded.
      */
@@ -37,10 +37,10 @@ public class WeatherAPI {
             throw new RuntimeException("Failed to load API key from config.properties", e);
         }
     }
-    
+
     /**
      * Gets the current weather for a given location.
-     * 
+     *
      * @param location the name of the location.
      * @param unitCode the unit system, "C" for metric or "F" for imperial.
      * @return a JSON string containing the current weather data.
@@ -52,7 +52,7 @@ public class WeatherAPI {
 
     /**
      * Gets the hourly forecast for a given location.
-     * 
+     *
      * @param location the name of the location.
      * @param unitCode the unit system, "C" for metric or "F" for imperial.
      * @return a JSON string containing the hourly forecast data.
@@ -64,7 +64,7 @@ public class WeatherAPI {
 
     /**
      * Gets the daily forecast for the next five days for a given location.
-     * 
+     *
      * @param location the name of the location.
      * @param unitCode the unit system, "C" for metric or "F" for imperial.
      * @return a JSON string containing the daily forecast data.
@@ -76,7 +76,7 @@ public class WeatherAPI {
 
     /**
      * Fetches weather data from the specified endpoint.
-     * 
+     *
      * @param endpoint the API endpoint (e.g., "weather" or "forecast/daily").
      * @param location the name of the location.
      * @param unitCode the unit system, "C" for metric or "F" for imperial.
@@ -90,13 +90,14 @@ public class WeatherAPI {
         validateCoordinates(coordinates);
 
         String urlString = String.format(
-            "https://api.openweathermap.org/data/2.5/%s?lat=%s&lon=%s&appid=%s&units=%s%s",
-            endpoint, coordinates[0], coordinates[1], API_KEY, unit, String.join("", extraParams)
+                "https://api.openweathermap.org/data/2.5/%s?lat=%s&lon=%s&appid=%s&units=%s%s",
+                endpoint, coordinates[0], coordinates[1], API_KEY, unit, String.join("", extraParams)
         );
 
         JsonObject jsonObject = makeAPICall(urlString);
         if (jsonObject != null) {
-            return new Gson().toJson(jsonObject);
+            String weatherData = new Gson().toJson(jsonObject);
+            return weatherData;
         } else {
             throw new Exception("Failed to read weather data.");
         }
@@ -104,7 +105,7 @@ public class WeatherAPI {
 
     /**
      * Validates the coordinates retrieved for a location.
-     * 
+     *
      * @param coordinates the latitude and longitude of the location.
      * @throws Exception if the coordinates are invalid.
      */
@@ -116,7 +117,7 @@ public class WeatherAPI {
 
     /**
      * Makes an API call and returns the result as a JSON object.
-     * 
+     *
      * @param urlString the URL string for the API request.
      * @return a JsonObject containing the response, or null if an error occurs.
      */
@@ -134,27 +135,36 @@ public class WeatherAPI {
                     while ((inputLine = in.readLine()) != null) {
                         response.append(inputLine);
                     }
-                    return JsonParser.parseString(response.toString()).getAsJsonObject();
+                    // Parse the JSON response
+                    JsonObject jsonObject;
+                    JsonElement rootElement = JsonParser.parseString(response.toString());
+                    if (rootElement.isJsonObject()) {
+                        jsonObject = rootElement.getAsJsonObject();
+                    } else {
+                        JsonArray jsonArray = rootElement.getAsJsonArray();
+                        jsonObject = jsonArray.get(0).getAsJsonObject();
+                    }
+                    return jsonObject;
                 }
             }
         } catch (IOException | JsonSyntaxException e) {
             return null;
-          
+
         }
         return null;
     }
 
     /**
      * Looks up the latitude and longitude for a given location.
-     * 
+     *
      * @param location the name of the location.
      * @return an array containing latitude at index 0 and longitude at index 1.
      */
     public String[] lookUpLocation(String location) {
         currentLocation = "";
         String urlString = String.format(
-            "http://api.openweathermap.org/geo/1.0/direct?q=%s&limit=1&appid=%s",
-            location, API_KEY
+                "http://api.openweathermap.org/geo/1.0/direct?q=%s&limit=1&appid=%s",
+                location, API_KEY
         );
 
         JsonObject jsonObject = makeAPICall(urlString);
@@ -169,7 +179,7 @@ public class WeatherAPI {
 
     /**
      * Gets the name of the most recently queried location.
-     * 
+     *
      * @return the name of the current location.
      */
     public String getCurrentLocationName() {

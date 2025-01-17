@@ -271,7 +271,7 @@ public class ProgramState {
      * @throws Exception if the file cannot be found or isn't properly formatted
      */    
     public void loadProgramState() throws Exception {
-        // Extract data from the json and create WeatherDataEntries
+        // Extract data from the jsonState and create WeatherDataEntries
         Gson gson = new Gson();
 
         try {
@@ -305,11 +305,11 @@ public class ProgramState {
         programStateData.put("favorites", favorites);
         programStateData.put("history", history);
         Gson gson = new Gson();
-        String json = gson.toJson(programStateData);
-        System.out.println(json);
+        String jsonState = gson.toJson(programStateData);
+        System.out.println(jsonState);
 
         try {
-            fileHandler.writeJsonToFile("programState.json", json);
+            fileHandler.writeJsonToFile("programState.json", jsonState);
         } catch (Exception e) {
             System.err.println("Error when trying to write file programstate.json: " + e.getMessage());
         }
